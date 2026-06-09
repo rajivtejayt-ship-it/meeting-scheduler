@@ -68,6 +68,10 @@ export async function confirmBooking(formData: FormData) {
 
   // 1. If paid meeting, create pending booking and Stripe session
   if (meetingType.price > 0) {
+    if (!process.env.STRIPE_SECRET_KEY || process.env.STRIPE_SECRET_KEY === "sk_test_placeholder") {
+      throw new Error("Payments are not yet configured for this site. Please book a free meeting or contact the host.");
+    }
+
     const origin = (await headers()).get("origin");
 
     // Create a pending booking
