@@ -53,10 +53,16 @@ export function BookingCalendar({ meetingTypeId }: { meetingTypeId: string }) {
       const day   = String(selectedDate.getDate()).padStart(2, "0");
       const dateString = `${year}-${month}-${day}`;
 
+      console.log("[BookingCalendar] Fetching slots for date:", dateString);
+      console.log("[BookingCalendar] Selected date object:", selectedDate);
+      console.log("[BookingCalendar] Meeting type ID:", meetingTypeId);
+
       const availableSlots = await getAvailableSlotsAction(meetingTypeId, dateString);
+      
+      console.log("[BookingCalendar] Received slots:", availableSlots.length);
       setSlots(availableSlots.map(s => new Date(s)));
     } catch (error) {
-      console.error(error);
+      console.error("[BookingCalendar] Error fetching slots:", error);
     } finally {
       setLoading(false);
     }

@@ -27,19 +27,28 @@ export async function getHostAvailabilityAction(meetingTypeId: string): Promise<
 // We parse it into a UTC-midnight Date so day-of-week and slot times are
 // always consistent regardless of server or client timezone.
 export async function getAvailableSlotsAction(meetingTypeId: string, dateString: string) {
+  console.log("=== getAvailableSlotsAction START ===");
+  console.log("Input dateString:", dateString);
+  console.log("Input meetingTypeId:", meetingTypeId);
+
   const meetingType = await db.query.meetingTypes.findFirst({
     where: eq(meetingTypes.id, meetingTypeId),
   });
 
   if (!meetingType) throw new Error("Meeting type not found");
+  console.log("Meeting type found:", { id: meetingType.id, userId: meetingType.userId, duration: meetingType.duration });
 
   // Parse the YYYY-MM-DD string into a UTC midnight date.
   const [year, month, day] = dateString.split("-").map(Number);
+  console.log("Parsed date components:", { year, month, day });
+  
   const utcDate = new Date(Date.UTC(year, month - 1, day));
+  console.log("UTC Date constructed:", utcDate.toISOString());
 
   // getUTCDay() on a UTC-midnight date gives the correct weekday for the
   // user-selected calendar date, immune to any timezone offset.
   const dayOfWeek = utcDate.getUTCDay();
+  console.log("Day of week (0=Sun, 6=Sat):", dayOfWeek);
 
   const hostAvailability = await db.query.availability.findFirst({
     where: and(
@@ -48,13 +57,23 @@ export async function getAvailableSlotsAction(meetingTypeId: string, dateString:
     ),
   });
 
-  if (!hostAvailability || !hostAvailability.isActive) return [];
+  console.log("Host availability query result:", hostAvailability);
+
+  if (!hostAvailability || !hostAvailability.isActive) {
+    console.log("No availability found or not active, returning empty array");
+    return [];
+  }
+
+  console.log("Working hours:", { start: hostAvailability.startTime, end: hostAvailability.endTime, isActive: hostAvailability.isActive });
 
   // Fetch Google Calendar events for the full UTC day
   const startOfDay = new Date(Date.UTC(year, month - 1, day, 0, 0, 0, 0));
   const endOfDay   = new Date(Date.UTC(year, month - 1, day, 23, 59, 59, 999));
 
+  console.log("Fetching calendar events from", startOfDay.toISOString(), "to", endOfDay.toISOString());
+
   const events = await getCalendarEvents(meetingType.userId, startOfDay, endOfDay);
+  console.log("Calendar events fetched:", events.length);
 
   const slots = getAvailableSlots(
     utcDate,
@@ -66,6 +85,10 @@ export async function getAvailableSlotsAction(meetingTypeId: string, dateString:
     meetingType.duration,
     events
   );
+
+  console.log("Slots generated:", slots.length);
+  console.log("First 3 slots:", slots.slice(0, 3).map(s => s.toISOString()));
+  console.log("=== getAvailableSlotsAction END ===");
 
   return slots.map(s => s.toISOString());
 }
