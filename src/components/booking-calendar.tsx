@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { Calendar } from "@/components/ui/calendar";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { getAvailableSlotsAction } from "@/app/actions/booking";
+import { getAvailableSlotsAction, getHostAvailabilityAction } from "@/app/actions/booking";
 import { format } from "date-fns";
 import { formatInTimeZone } from "date-fns-tz";
 import { Loader2, Globe } from "lucide-react";
@@ -17,10 +17,21 @@ export function BookingCalendar({ meetingTypeId }: { meetingTypeId: string }) {
   const [loading, setLoading] = useState(false);
   const [selectedSlot, setSelectedSlot] = useState<Date | null>(null);
   const [timezone, setTimezone] = useState<string>("UTC");
+  const [activeDays, setActiveDays] = useState<number[]>([1, 2, 3, 4, 5]); // defaults Mon-Fri
 
   useEffect(() => {
     setTimezone(Intl.DateTimeFormat().resolvedOptions().timeZone);
   }, []);
+
+  useEffect(() => {
+    // Fetch the host's active days so the calendar disables the right days
+    getHostAvailabilityAction(meetingTypeId).then((days) => {
+      setActiveDays(days);
+    }).catch(() => {
+      // fallback to Mon-Fri if fetch fails
+      setActiveDays([1, 2, 3, 4, 5]);
+    });
+  }, [meetingTypeId]);
 
   useEffect(() => {
     if (date) {
@@ -54,7 +65,11 @@ export function BookingCalendar({ meetingTypeId }: { meetingTypeId: string }) {
             selected={date}
             onSelect={setDate}
             className="rounded-md border shadow"
-            disabled={(date) => date < new Date() || date.getDay() === 0 || date.getDay() === 6}
+            disabled={(d) => {
+              const today = new Date();
+              today.setHours(0, 0, 0, 0);
+              return d < today || !activeDays.includes(d.getDay());
+            }}
           />
         </CardContent>
       </Card>

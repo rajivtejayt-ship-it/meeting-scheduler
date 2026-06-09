@@ -7,6 +7,22 @@ import { getCalendarEvents, createCalendarEvent } from "@/lib/google-calendar";
 import { getAvailableSlots } from "@/lib/availability";
 import { revalidatePath } from "next/cache";
 
+export async function getHostAvailabilityAction(meetingTypeId: string): Promise<number[]> {
+  const meetingType = await db.query.meetingTypes.findFirst({
+    where: eq(meetingTypes.id, meetingTypeId),
+  });
+
+  if (!meetingType) return [];
+
+  const hostAvailability = await db.query.availability.findMany({
+    where: eq(availability.userId, meetingType.userId),
+  });
+
+  return hostAvailability
+    .filter((a) => a.isActive)
+    .map((a) => a.dayOfWeek);
+}
+
 export async function getAvailableSlotsAction(meetingTypeId: string, date: Date) {
   const meetingType = await db.query.meetingTypes.findFirst({
     where: eq(meetingTypes.id, meetingTypeId),
@@ -14,7 +30,11 @@ export async function getAvailableSlotsAction(meetingTypeId: string, date: Date)
 
   if (!meetingType) throw new Error("Meeting type not found");
 
-  const dayOfWeek = new Date(date).getUTCDay();
+  // Use local day-of-week from the date string, not UTC, so that a visitor
+  // picking "Monday" always looks up Monday availability regardless of timezone.
+  const localDate = new Date(date);
+  const dayOfWeek = localDate.getDay();
+
   const hostAvailability = await db.query.availability.findFirst({
     where: and(
       eq(availability.userId, meetingType.userId),

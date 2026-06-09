@@ -10,11 +10,13 @@ export function getAvailableSlots(
   const [startHour, startMin] = workingHours.start.split(":").map(Number);
   const [endHour, endMin] = workingHours.end.split(":").map(Number);
 
+  // Use local (wall-clock) hours so that "09:00" means 9am in the host's
+  // saved timezone context, not 9am UTC which would shift slots for every TZ.
   const startOfDay = new Date(date);
-  startOfDay.setUTCHours(startHour, startMin, 0, 0);
+  startOfDay.setHours(startHour, startMin, 0, 0);
 
   const endOfDay = new Date(date);
-  endOfDay.setUTCHours(endHour, endMin, 0, 0);
+  endOfDay.setHours(endHour, endMin, 0, 0);
 
   let currentSlot = new Date(startOfDay);
 
