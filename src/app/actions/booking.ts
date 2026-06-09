@@ -23,17 +23,23 @@ export async function getHostAvailabilityAction(meetingTypeId: string): Promise<
     .map((a) => a.dayOfWeek);
 }
 
-export async function getAvailableSlotsAction(meetingTypeId: string, date: Date) {
+// dateString must be "YYYY-MM-DD" in the visitor's local calendar (sent by the client).
+// We parse it into a UTC-midnight Date so day-of-week and slot times are
+// always consistent regardless of server or client timezone.
+export async function getAvailableSlotsAction(meetingTypeId: string, dateString: string) {
   const meetingType = await db.query.meetingTypes.findFirst({
     where: eq(meetingTypes.id, meetingTypeId),
   });
 
   if (!meetingType) throw new Error("Meeting type not found");
 
-  // Use local day-of-week from the date string, not UTC, so that a visitor
-  // picking "Monday" always looks up Monday availability regardless of timezone.
-  const localDate = new Date(date);
-  const dayOfWeek = localDate.getDay();
+  // Parse the YYYY-MM-DD string into a UTC midnight date.
+  const [year, month, day] = dateString.split("-").map(Number);
+  const utcDate = new Date(Date.UTC(year, month - 1, day));
+
+  // getUTCDay() on a UTC-midnight date gives the correct weekday for the
+  // user-selected calendar date, immune to any timezone offset.
+  const dayOfWeek = utcDate.getUTCDay();
 
   const hostAvailability = await db.query.availability.findFirst({
     where: and(
@@ -44,21 +50,20 @@ export async function getAvailableSlotsAction(meetingTypeId: string, date: Date)
 
   if (!hostAvailability || !hostAvailability.isActive) return [];
 
-  const startOfDay = new Date(date);
-  startOfDay.setUTCHours(0, 0, 0, 0);
-  const endOfDay = new Date(date);
-  endOfDay.setUTCHours(23, 59, 59, 999);
+  // Fetch Google Calendar events for the full UTC day
+  const startOfDay = new Date(Date.UTC(year, month - 1, day, 0, 0, 0, 0));
+  const endOfDay   = new Date(Date.UTC(year, month - 1, day, 23, 59, 59, 999));
 
   const events = await getCalendarEvents(meetingType.userId, startOfDay, endOfDay);
-  
+
   const slots = getAvailableSlots(
-    date, 
-    { 
-      start: hostAvailability.startTime, 
-      end: hostAvailability.endTime, 
-      isActive: hostAvailability.isActive 
-    }, 
-    meetingType.duration, 
+    utcDate,
+    {
+      start: hostAvailability.startTime,
+      end: hostAvailability.endTime,
+      isActive: hostAvailability.isActive,
+    },
+    meetingType.duration,
     events
   );
 

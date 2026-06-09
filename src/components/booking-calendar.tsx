@@ -44,7 +44,16 @@ export function BookingCalendar({ meetingTypeId }: { meetingTypeId: string }) {
     setSlots([]);
     setSelectedSlot(null);
     try {
-      const availableSlots = await getAvailableSlotsAction(meetingTypeId, selectedDate);
+      // Send date as a YYYY-MM-DD string in the visitor's local calendar so
+      // the server can reconstruct the correct UTC-midnight date without any
+      // timezone ambiguity (a raw Date object gets serialized to UTC ISO which
+      // shifts the day for visitors in timezones ahead of UTC).
+      const year  = selectedDate.getFullYear();
+      const month = String(selectedDate.getMonth() + 1).padStart(2, "0");
+      const day   = String(selectedDate.getDate()).padStart(2, "0");
+      const dateString = `${year}-${month}-${day}`;
+
+      const availableSlots = await getAvailableSlotsAction(meetingTypeId, dateString);
       setSlots(availableSlots.map(s => new Date(s)));
     } catch (error) {
       console.error(error);
