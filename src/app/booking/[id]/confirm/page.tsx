@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, use } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { format } from "date-fns";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -11,7 +11,8 @@ import { Calendar, Clock, User } from "lucide-react";
 import { confirmBooking } from "@/app/actions/booking";
 import { toast } from "sonner";
 
-export default function ConfirmBookingPage({ params }: { params: { id: string } }) {
+export default function ConfirmBookingPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = use(params);
   const searchParams = useSearchParams();
   const router = useRouter();
   const slot = searchParams.get("slot");
@@ -28,13 +29,13 @@ export default function ConfirmBookingPage({ params }: { params: { id: string } 
     setLoading(true);
 
     const formData = new FormData(event.currentTarget);
-    formData.append("meetingTypeId", params.id);
+    formData.append("meetingTypeId", id);
     formData.append("slot", slot!);
 
     try {
       await confirmBooking(formData);
       toast.success("Booking confirmed!");
-      router.push(`/booking/${params.id}/success`);
+      router.push(`/booking/${id}/success`);
     } catch (error) {
       toast.error("Failed to confirm booking");
     } finally {

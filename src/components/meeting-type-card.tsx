@@ -3,9 +3,10 @@
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Clock, Copy, ExternalLink } from "lucide-react";
+import { Clock, Copy, Eye } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import Link from "next/link";
 
 interface MeetingType {
   id: string;
@@ -16,9 +17,10 @@ interface MeetingType {
 }
 
 export function MeetingTypeCard({ meetingType }: { meetingType: MeetingType }) {
-  const bookingUrl = `${window.location.origin}/booking/${meetingType.id}`;
+  const bookingPath = `/booking/${meetingType.id}`;
 
   const copyLink = () => {
+    const bookingUrl = `${window.location.origin}${bookingPath}`;
     navigator.clipboard.writeText(bookingUrl);
     toast.success("Link copied to clipboard");
   };
@@ -45,15 +47,13 @@ export function MeetingTypeCard({ meetingType }: { meetingType: MeetingType }) {
           <Copy className="h-4 w-4" />
           Copy Link
         </Button>
-        <a 
-          href={bookingUrl} 
-          target="_blank" 
-          rel="noopener noreferrer" 
+        <Link
+          href={bookingPath}
           className={cn(buttonVariants({ variant: "ghost", size: "sm" }), "gap-2")}
         >
-          <ExternalLink className="h-4 w-4" />
+          <Eye className="h-4 w-4" />
           View Page
-        </a>
+        </Link>
       </CardFooter>
     </Card>
   );

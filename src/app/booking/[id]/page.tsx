@@ -6,9 +6,11 @@ import { BookingCalendar } from "@/components/booking-calendar";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Clock } from "lucide-react";
 
-export default async function BookingPage({ params }: { params: { id: string } }) {
+export default async function BookingPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
+
   const meetingType = await db.query.meetingTypes.findFirst({
-    where: eq(meetingTypes.id, params.id),
+    where: eq(meetingTypes.id, id),
     with: {
       user: true
     }
