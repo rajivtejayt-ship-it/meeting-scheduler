@@ -12,12 +12,14 @@ export async function createMeetingType(formData: FormData) {
   const name = formData.get("name") as string;
   const description = formData.get("description") as string;
   const duration = parseInt(formData.get("duration") as string);
+  const price = parseInt(formData.get("price") as string) || 0;
 
   await db.insert(meetingTypes).values({
     userId,
     name,
     description,
     duration,
+    price,
   });
 
   revalidatePath("/dashboard");

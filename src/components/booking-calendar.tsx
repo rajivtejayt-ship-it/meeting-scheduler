@@ -6,7 +6,8 @@ import { Button, buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { getAvailableSlotsAction } from "@/app/actions/booking";
 import { format } from "date-fns";
-import { Loader2 } from "lucide-react";
+import { formatInTimeZone } from "date-fns-tz";
+import { Loader2, Globe } from "lucide-react";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
 
@@ -15,6 +16,11 @@ export function BookingCalendar({ meetingTypeId }: { meetingTypeId: string }) {
   const [slots, setSlots] = useState<Date[]>([]);
   const [loading, setLoading] = useState(false);
   const [selectedSlot, setSelectedSlot] = useState<Date | null>(null);
+  const [timezone, setTimezone] = useState<string>("UTC");
+
+  useEffect(() => {
+    setTimezone(Intl.DateTimeFormat().resolvedOptions().timeZone);
+  }, []);
 
   useEffect(() => {
     if (date) {
@@ -55,9 +61,15 @@ export function BookingCalendar({ meetingTypeId }: { meetingTypeId: string }) {
 
       <Card>
         <CardHeader>
-          <CardTitle>
-            {date ? format(date, "EEEE, MMMM do") : "Select a date"}
-          </CardTitle>
+          <div className="flex justify-between items-center">
+            <CardTitle>
+              {date ? format(date, "EEEE, MMMM do") : "Select a date"}
+            </CardTitle>
+            <div className="flex items-center gap-1 text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded-full">
+              <Globe className="h-3 w-3" />
+              {timezone}
+            </div>
+          </div>
         </CardHeader>
         <CardContent>
           {loading ? (
@@ -72,7 +84,7 @@ export function BookingCalendar({ meetingTypeId }: { meetingTypeId: string }) {
                   variant={selectedSlot?.getTime() === slot.getTime() ? "default" : "outline"}
                   onClick={() => setSelectedSlot(slot)}
                 >
-                  {format(slot, "h:mm a")}
+                  {formatInTimeZone(slot, timezone, "h:mm a")}
                 </Button>
               ))}
             </div>

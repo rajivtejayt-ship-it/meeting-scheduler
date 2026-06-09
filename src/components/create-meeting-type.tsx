@@ -60,6 +60,10 @@ export function CreateMeetingType() {
               <Label htmlFor="duration">Duration (minutes)</Label>
               <Input id="duration" name="duration" type="number" defaultValue={30} required />
             </div>
+            <div className="grid gap-2">
+              <Label htmlFor="price">Price (USD - optional, in cents)</Label>
+              <Input id="price" name="price" type="number" placeholder="e.g., 5000 for $50.00" defaultValue={0} />
+            </div>
           </div>
           <DialogFooter>
             <Button type="submit" disabled={loading}>

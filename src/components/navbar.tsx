@@ -19,6 +19,9 @@ export function Navbar() {
             <Link href="/dashboard" className="text-sm font-medium hover:text-blue-600">
               Dashboard
             </Link>
+            <Link href="/dashboard/availability" className="text-sm font-medium hover:text-blue-600">
+              Availability
+            </Link>
             <UserButton />
           </div>
         </div>
